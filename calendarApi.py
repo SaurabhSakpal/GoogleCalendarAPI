@@ -4,9 +4,11 @@ import httplib2
 import os
 
 from apiclient import discovery
+from Event import *
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
+from geopy.geocoders import Nominatim
 
 import datetime
 
@@ -70,7 +72,9 @@ def main():
     service = discovery.build('calendar', 'v3', http=http)
 
     now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-    #print(now)
+    #dayLater = 
+    print(now)
+    print(datetime.datetime.now())
     print('Getting the upcoming 20 events')
     eventsResult = service.events().list(calendarId='primary', timeMin=now, maxResults=20, singleEvents=True, orderBy='startTime').execute()
     events = eventsResult.get('items', [])
@@ -79,12 +83,28 @@ def main():
         print('No upcoming events found.')
     for event in events:
         start = event['start'].get('dateTime', event['start'].get('date'))
-        #print(event)
-        print("\n\n\n")
+        
+        geocoordinates = None
+        if(checkIfKeyPresent(event, 'location')):
+            location = event['location'];
+            geolocator = Nominatim()
+            coordinates = geolocator.geocode(location)
+            geocoordinates = [coordinates.latitude, coordinates.longitude]
+
+        description = None
         if checkIfKeyPresent(event, 'description'):
-            print(start, event['summary'], event['description'])
-        else :
-            print(start, event['summary'])
+            description = event['description']
+
+        summary = event['summary']
+
+        event = Event(start, summary, description, geocoordinates)
+
+        event.printContents()
+
+        # if checkIfKeyPresent(event, 'description'):
+        #     print(start, event['summary'], event['description'], )
+        # else :
+        #     print(start, event['summary'])
 
 if __name__ == '__main__':
     main()  
